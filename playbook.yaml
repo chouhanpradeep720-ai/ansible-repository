@@ -3,13 +3,14 @@
   hosts: vm_server
   become: yes  
   tasks:
-  - name: uninstall nginx server on vm
+  - name: install nginx server on vm
     apt:
       name: nginx
-      state: absent 
-  - name: stop nginx server on vm 
+      state: present
+  - name: start nginx server on vm 
     service:
       name : nginx
-      state: stopped
+      state: started
+        
 
 
