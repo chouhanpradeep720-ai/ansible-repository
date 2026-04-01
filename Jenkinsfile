@@ -4,7 +4,7 @@ pipeline{
         stage('ssh agent'){
             steps{
                 script{
-                    sshagent(['ansible-key']) {
+                    sshagent(['ansible-server-key']) {
                         sh 'ls -la'
                     }
                 }
