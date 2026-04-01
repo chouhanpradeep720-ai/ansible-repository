@@ -1,7 +1,7 @@
 pipeline{
     agent any
     stages{
-        stage{
+        stage('ssh agent'){
             steps{
                 script{
                     sshagent(['ansible-key']) {
