@@ -1,0 +1,95 @@
+---
+- name: install java
+  hosts: vm_server
+  become: yes
+  tasks:
+  - name: install openjdk
+    apt:
+      pkg:
+      - openjdk-8-jre-headless
+  - name: check version install
+    command: java -version
+
+- name: download nexus package
+  hosts:  vm_server
+  become: yes
+  tasks:
+  - name: check the nexus status 
+    stat: 
+      path: /opt/nexus 
+    register: nexus_result
+  - name: status of nexus tar
+    stat:
+      path: /opt/nexus-3.90.2-06-linux-x86_64.tar.gz
+    register: state_result
+  - name: download nexus
+    get_url:
+      url: https://download.sonatype.com/nexus/3/nexus-3.90.2-06-linux-x86_64.tar.gz
+      dest: /opt/
+    when: not state_result.stat.exists
+  - name: unpack nexus 
+    unarchive:
+        src: /opt/nexus-3.90.2-06-linux-x86_64.tar.gz
+        dest: /opt/
+        remote_src: yes
+    when: not nexus_result.stat.exists  
+  - name: find the nexus folder 
+    find:
+      paths: /opt
+      pattern: "nexus-*"
+      file_type: directory 
+    register: find_nexus   
+  - name: rename the nexus 
+    shell: mv {{find_nexus.files[0].path}} /opt/nexus 
+    when: not nexus_result.stat.exists 
+
+- name: add nexus user and add ownership  
+  hosts: vm_server
+  become: yes
+  tasks:
+  - name: create nexus group
+    group:
+      name: nexus
+      state: present 
+  - name: create nexus user and group 
+    user:
+      name: nexus
+      group: nexus
+  - name: make nexus user owner of nexus folder
+    file:
+       path: /opt/nexus
+       state: directory
+       owner: nexus
+       group: nexus
+       recurse: yes
+  - name: make nexus user owner of sonatyework
+    file:
+       path: /opt/sonatype-work
+       state: directory
+       owner: nexus
+       group: nexus
+       recurse: yes    
+- name: start nexus with nexus user 
+  hosts: vm_server
+  become: yes
+  become_user: nexus
+  tasks:
+  - name: Append line to nexus.rc
+    lineinfile:
+        path: /opt/nexus/bin/nexus.rc
+        line: 'run_as_user="nexus"'
+        create: yes 
+  - name: start nexus 
+    command: /opt/nexus/bin/nexus start
+
+- name: verify nexus is start 
+  hosts: vm_server
+  tasks: 
+  - name: check with ps
+    shell: ps aux | grep nexus
+    register: nexus_start_ps
+  - debug: msg={{nexus_start_ps.stdout_lines}}
+  - name:  check with netstat
+    shell: netstat -lnpt 
+    register: nexus_start_ps
+  - debug: msg={{nexus_start_ps.stdout_lines}} 

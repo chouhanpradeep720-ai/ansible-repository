@@ -1,0 +1,2 @@
+[vm_server]
+172.22.214.235 ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_user=pradeep-ubuntu ansible_become_pass=2005
